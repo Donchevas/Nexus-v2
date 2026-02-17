@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus-OmniAgent v2</title>
+    <style>
+        :root { --primary: #1a73e8; --bg: #f8f9fa; --text: #202124; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; height: 100vh; margin: 0; }
+        header { background: #0d47a1; color: white; width: 100%; padding: 15px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #chat-container { width: 90%; max-width: 600px; flex: 1; display: flex; flex-direction: column; background: white; margin: 20px 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+        #chat-box { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .message { padding: 10px 15px; border-radius: 18px; max-width: 80%; line-height: 1.4; font-size: 15px; }
+        .user { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .nexus { align-self: flex-start; background: #e8f0fe; color: #1967d2; border-bottom-left-radius: 2px; border: 1px solid #d2e3fc; }
+        .dominio { font-size: 10px; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; display: block; opacity: 0.7; }
+        #input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 24px; outline: none; transition: border 0.3s; }
+        input:focus { border-color: var(--primary); }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 24px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #1557b0; }
+        .loading { font-style: italic; color: #70757a; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1 style="margin:0; font-size: 1.5rem;">Nexus-OmniAgent v2</h1>
+    <small>Arquitectura Limpia & Agentes de IA</small>
+</header>
+
+<div id="chat-container">
+    <div id="chat-box">
+        <div class="message nexus">
+            ¡Hola Christian! Nexus v2 está listo. Pregúntame sobre Sebastián, tus hijos o tu experiencia en Ayesa.
+        </div>
+    </div>
+    <div id="input-area">
+        <input type="text" id="userInput" placeholder="Escribe tu consulta aquí..." onkeypress="handleKey(event)">
+        <button onclick="sendMessage()">Enviar</button>
+    </div>
+</div>
+
+<script>
+    // IMPORTANTE: Cambia esta URL por la de tu despliegue en Vercel
+    const VERCEL_URL = "https://tu-proyecto-nexus.vercel.app/api/chat";
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const chatBox = document.getElementById('chat-box');
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        // Mostrar mensaje del usuario
+        appendMessage('user', message);
+        input.value = '';
+
+        // Mostrar estado de carga
+        const loadingId = 'loading-' + Date.now();
+        chatBox.innerHTML += `<div id="${loadingId}" class="loading">Nexus pensando...</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        try {
+            const response = await fetch(VERCEL_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            });
+
+            const data = await response.json();
+            
+            // Eliminar carga y mostrar respuesta
+            document.getElementById(loadingId).remove();
+            appendMessage('nexus', data.response, data.dominio);
+
+        } catch (error) {
+            document.getElementById(loadingId).remove();
+            appendMessage('nexus', "Error: No pude conectar con el orquestador. Verifica la URL de Vercel.");
+            console.error(error);
+        }
+    }
+
+    function appendMessage(sender, text, dominio = null) {
+        const chatBox = document.getElementById('chat-box');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message ${sender}`;
+        
+        let content = '';
+        if (dominio) {
+            content += `<span class="dominio">Intención: ${dominio}</span>`;
+        }
+        content += `<span>${text}</span>`;
+        
+        msgDiv.innerHTML = content;
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function handleKey(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+</script>
+
+</body>
+</html>
