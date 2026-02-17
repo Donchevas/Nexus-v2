@@ -3,3 +3,6 @@ uvicorn
 google-cloud-aiplatform>=1.38.0
 pydantic
 httpx
+# Si usas LangChain para tus agentes en el motor:
+langchain-google-genai
+langchain-core
